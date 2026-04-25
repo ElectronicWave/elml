@@ -14,36 +14,30 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        Self { page: Page::new() }
+        Self {
+            page: Page::default(),
+        }
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         loop {
             terminal.draw(|frame| self.render(frame))?;
-            if event::poll(Duration::from_millis(16))? {
-                if let Event::Key(key) = event::read()? {
-                    if key.code == KeyCode::Char('c')
-                        && key.modifiers.contains(KeyModifiers::CONTROL)
-                    {
-                        break;
-                    }
-
-                    self.on_key(key);
+            if event::poll(Duration::from_millis(16))?
+                && let Event::Key(key) = event::read()?
+            {
+                if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
+                    break;
                 }
+
+                self.on_key(key);
             }
         }
         Ok(())
     }
 
     pub fn on_key(&mut self, key: KeyEvent) {
-        // Match state
-        // match self.page.sidebar.list.selected() {}
         if key.is_press() {
-            match key.code {
-                KeyCode::Down => self.page.sidebar.list.select_next(),
-                KeyCode::Up => self.page.sidebar.list.select_previous(),
-                _ => (),
-            }
+            self.page.on_key(key);
         }
     }
 

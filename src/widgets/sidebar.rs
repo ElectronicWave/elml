@@ -15,9 +15,17 @@ impl Sidebar {
         Self { items }
     }
 }
-
+#[derive(Debug, Clone)]
 pub struct SidebarState {
     pub list: ListState,
+}
+
+impl Default for SidebarState {
+    fn default() -> Self {
+        Self {
+            list: ListState::default().with_selected(Some(0)),
+        }
+    }
 }
 
 impl StatefulWidget for Sidebar {
@@ -32,7 +40,7 @@ impl StatefulWidget for Sidebar {
             )
             .style(Style::new().white())
             .highlight_style(Style::new().italic().light_green())
-            .highlight_symbol(">>")
+            .highlight_symbol(">")
             .repeat_highlight_symbol(true);
         list.render(area, buf, &mut state.list);
     }
