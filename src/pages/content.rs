@@ -5,8 +5,10 @@ use ratatui::{
     style::Style,
     symbols::merge::MergeStrategy,
     text::Line,
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Borders, Paragraph, Widget, Wrap},
 };
+
+use crate::pages::contents::{catalog::CatalogContent, home::HomeContent};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum PageId {
@@ -43,6 +45,10 @@ pub trait Content {
     fn render(&mut self, frame: &mut Frame, area: Rect);
 
     fn on_key(&mut self, key: KeyEvent);
+
+    fn keybindings(&self) -> Option<Box<[(&'static str, &'static str)]>> {
+        None
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -71,22 +77,15 @@ impl ContentState {
             PageId::Settings => self.settings.on_key(key),
         }
     }
-}
 
-#[derive(Debug, Clone, Default)]
-pub struct HomeContent;
-
-impl Content for HomeContent {
-    fn render(&mut self, frame: &mut Frame, area: Rect) {
-        render_placeholder(
-            frame,
-            area,
-            "Home",
-            "This page can grow into a dashboard component with its own layout and state.",
-        );
+    pub fn keybindings(&self, page_id: PageId) -> Option<Box<[(&'static str, &'static str)]>> {
+        match page_id {
+            PageId::Home => self.home.keybindings(),
+            PageId::Instances => self.instances.keybindings(),
+            PageId::Catalog => self.catalog.keybindings(),
+            PageId::Settings => self.settings.keybindings(),
+        }
     }
-
-    fn on_key(&mut self, _key: KeyEvent) {}
 }
 
 #[derive(Debug, Clone, Default)]
@@ -99,22 +98,6 @@ impl Content for InstancesContent {
             area,
             "Instances",
             "This page is ready for an instances list, actions, and per-instance details.",
-        );
-    }
-
-    fn on_key(&mut self, _key: KeyEvent) {}
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct CatalogContent;
-
-impl Content for CatalogContent {
-    fn render(&mut self, frame: &mut Frame, area: Rect) {
-        render_placeholder(
-            frame,
-            area,
-            "Catalog",
-            "This page can render catalog search, filters, and item detail widgets.",
         );
     }
 
@@ -144,13 +127,22 @@ fn render_placeholder(frame: &mut Frame, area: Rect, title: &str, description: &
         Line::raw(description),
     ];
 
-    let paragraph = Paragraph::new(lines)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .merge_borders(MergeStrategy::Exact),
-        )
-        .wrap(Wrap { trim: true });
+    let paragraph = Paragraph::new(lines).wrap(Wrap { trim: true });
+    let content_area = container(frame, area);
+    frame.render_widget(paragraph, content_area);
+}
 
-    frame.render_widget(paragraph, area);
+pub fn container(frame: &mut Frame, area: Rect) -> Rect {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .merge_borders(MergeStrategy::Exact);
+    let inner = block.inner(area);
+
+    block.render(area, frame.buffer_mut());
+    Rect {
+        x: inner.x + 1,
+        y: inner.y,
+        width: inner.width - 2,
+        height: inner.height,
+    }
 }

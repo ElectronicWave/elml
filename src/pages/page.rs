@@ -75,15 +75,26 @@ impl Page {
     }
 
     pub fn on_key(&mut self, key: KeyEvent) {
+        if !key.is_press() {
+            return;
+        }
+
         match self.control_mode {
             PageControlMode::Sidebar => match key.code {
                 KeyCode::Down => self.select_next_sidebar_item(),
                 KeyCode::Up => self.select_previous_sidebar_item(),
-                KeyCode::Enter => self.enter_content_control(),
+                KeyCode::Enter => {
+                    self.enter_content_control();
+                    self.titlebar.keybindings =
+                        self.content.keybindings(self.selected_sidebar_entry().id);
+                }
                 _ => {}
             },
             PageControlMode::Content => match key.code {
-                KeyCode::Esc | KeyCode::Char('q') => self.exit_content_control(),
+                KeyCode::Esc => {
+                    self.exit_content_control();
+                    self.titlebar.keybindings.take();
+                }
                 _ => self.content.on_key(self.selected_sidebar_entry().id, key),
             },
         }

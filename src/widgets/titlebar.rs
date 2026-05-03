@@ -12,18 +12,15 @@ pub struct TitleBar;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TitleBarState {
-    title: String,
-    tips: Option<TitleBarTips>,
+    pub title: String,
+    pub keybindings: Option<Box<[(&'static str, &'static str)]>>,
 }
 
 impl Default for TitleBarState {
     fn default() -> Self {
         Self {
-            title: "⚛ Elemental Minecraft Launcher".into(),
-            tips: Some(TitleBarTips::new(
-                "Press ``Ctrl+C`` to quit, use ``↑`` ``↓`` to browse, ``ENTER`` to focus the page, and ``ESC`` or ``q`` to return."
-                    .into(),
-            )),
+            title: "⚛  Elemental Minecraft Launcher".into(),
+            keybindings: None,
         }
     }
 }
@@ -51,84 +48,56 @@ impl StatefulWidget for TitleBar {
             Style::default().fg(Color::White).bold(),
         );
 
-        if let Some(tips) = &state.tips {
-            tips.render(align(chunks[1], 1), buf);
-        }
+        let keybindings = TitleBarKeybindings::with_default(state.keybindings.as_deref());
+        keybindings.render(align(chunks[1], 1), buf);
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-enum TipSegment {
-    Plain(String),
-    Code(String),
+pub struct TitleBarKeybindings<'a> {
+    segments: &'a [(&'a str, &'a str)],
+}
+const DEFAULT_KEYBINDINGS: &[(&str, &str)] =
+    &[("Ctrl+Q", "Quit"), ("↑/↓", "Browse"), ("ENTER", "Focus")];
+
+impl<'a> Default for TitleBarKeybindings<'a> {
+    fn default() -> Self {
+        Self::new(DEFAULT_KEYBINDINGS)
+    }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct TitleBarTips {
-    segments: Vec<TipSegment>,
-}
-
-impl TitleBarTips {
-    pub fn new(text: String) -> Self {
+impl<'a> TitleBarKeybindings<'a> {
+    pub fn new(keybindings: &'a [(&'a str, &'a str)]) -> Self {
         Self {
-            segments: parse_tip_segments(&text),
-        }
-    }
-}
-
-fn parse_tip_segments(text: &str) -> Vec<TipSegment> {
-    let mut segments = Vec::new();
-    let mut cursor = 0;
-
-    while let Some(open_offset) = text[cursor..].find("``") {
-        let open_index = cursor + open_offset;
-
-        if open_index > cursor {
-            segments.push(TipSegment::Plain(text[cursor..open_index].to_string()));
-        }
-
-        let code_start = open_index + 2;
-        let Some(close_offset) = text[code_start..].find("``") else {
-            segments.push(TipSegment::Plain(text[open_index..].to_string()));
-            return segments;
-        };
-        let code_end = code_start + close_offset;
-
-        segments.push(TipSegment::Code(text[code_start..code_end].to_string()));
-        cursor = code_end + 2;
-    }
-
-    if cursor < text.len() {
-        segments.push(TipSegment::Plain(text[cursor..].to_string()));
-    }
-
-    segments
-}
-
-fn build_tip_line<'a>(segments: &'a [TipSegment]) -> Line<'a> {
-    let normal_style = Style::default().fg(Color::LightYellow).italic();
-    let code_style = Style::default().fg(Color::LightGreen).bold();
-    let mut spans = Vec::with_capacity(segments.len() + 1);
-
-    spans.push(Span::styled("Tips: ", normal_style));
-
-    for segment in segments {
-        match segment {
-            TipSegment::Plain(text) => {
-                spans.push(Span::styled(text.as_str(), normal_style));
-            }
-            TipSegment::Code(text) => {
-                spans.push(Span::styled(text.as_str(), code_style));
-            }
+            segments: keybindings,
         }
     }
 
-    Line::from(spans)
+    pub fn with_default(keybindings: Option<&'a [(&'a str, &'a str)]>) -> Self {
+        let segments = keybindings.unwrap_or(DEFAULT_KEYBINDINGS);
+        if segments.is_empty() {
+            return Self::default();
+        }
+        Self { segments }
+    }
 }
 
-impl Widget for &TitleBarTips {
+fn render_keybindings_spans<'a>(keybindings: &'a [(&'a str, &'a str)]) -> Vec<Span<'a>> {
+    keybindings
+        .iter()
+        .flat_map(|(key, desc)| {
+            let key_str = format!("[{}]", key);
+            vec![
+                Span::styled(key_str, Style::default().fg(Color::LightGreen).bold()),
+                Span::raw(format!("{} ", desc)),
+            ]
+        })
+        .collect()
+}
+
+impl<'a> Widget for &TitleBarKeybindings<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new(build_tip_line(&self.segments)).render(area, buf);
+        Paragraph::new(Line::from(render_keybindings_spans(self.segments))).render(area, buf);
     }
 }
 

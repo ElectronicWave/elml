@@ -25,7 +25,7 @@ impl App {
             if event::poll(Duration::from_millis(16))?
                 && let Event::Key(key) = event::read()?
             {
-                if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
+                if key.code == KeyCode::Char('q') && key.modifiers.contains(KeyModifiers::CONTROL) {
                     break;
                 }
 
@@ -36,9 +36,7 @@ impl App {
     }
 
     pub fn on_key(&mut self, key: KeyEvent) {
-        if key.is_press() {
-            self.page.on_key(key);
-        }
+        self.page.on_key(key);
     }
 
     pub fn render(&mut self, frame: &mut Frame) {
