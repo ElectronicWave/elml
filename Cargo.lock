@@ -740,9 +740,8 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
 name = "elemental-core"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b9aafe8a39e87b3e7bf1c5fcbfc7e6425fadae6c22bf02448537794fd2287ab"
+version = "0.2.0"
+source = "git+https://github.com/ElectronicWave/Elemental#d500fee8a1e830356e03762a55d11e28413683c2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -770,9 +769,8 @@ dependencies = [
 
 [[package]]
 name = "elemental-driver"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "197163b891db3f92873dde1e2cbb1e379a965cf91178793b4d556f92f1fd7fe3"
+version = "0.2.0"
+source = "git+https://github.com/ElectronicWave/Elemental#d500fee8a1e830356e03762a55d11e28413683c2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -790,9 +788,8 @@ dependencies = [
 
 [[package]]
 name = "elemental-infra"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ea312f65e409b715ace4065f92664923a5b3f74db4bef335e1561cdf2478515"
+version = "0.2.0"
+source = "git+https://github.com/ElectronicWave/Elemental#d500fee8a1e830356e03762a55d11e28413683c2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -809,9 +806,8 @@ dependencies = [
 
 [[package]]
 name = "elemental-kit"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ff4e8a5f8996b1d90d5c0026d332764770e00963edd96c949db013812fcdabb"
+version = "0.2.0"
+source = "git+https://github.com/ElectronicWave/Elemental#d500fee8a1e830356e03762a55d11e28413683c2"
 dependencies = [
  "elemental-core",
  "elemental-driver",
@@ -824,9 +820,8 @@ dependencies = [
 
 [[package]]
 name = "elemental-launcher"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bbe92cc3d5b4fadf11192333f31596712536891eba29ac94cfe2ea33472475b"
+version = "0.2.0"
+source = "git+https://github.com/ElectronicWave/Elemental#d500fee8a1e830356e03762a55d11e28413683c2"
 dependencies = [
  "anyhow",
  "elemental-core",
@@ -837,9 +832,8 @@ dependencies = [
 
 [[package]]
 name = "elemental-object"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b0b049e2d0a35e9fc8055d9575d529eab829141f839a5abb7b95825c5680da9"
+version = "0.2.0"
+source = "git+https://github.com/ElectronicWave/Elemental#d500fee8a1e830356e03762a55d11e28413683c2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -849,19 +843,18 @@ dependencies = [
 
 [[package]]
 name = "elemental-schema"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffd91c9eaca429b8a9c6e204a83cbb1f1502526283454fb55d4e27182935f0a7"
+version = "0.2.0"
+source = "git+https://github.com/ElectronicWave/Elemental#d500fee8a1e830356e03762a55d11e28413683c2"
 dependencies = [
+ "chrono",
  "serde",
  "serde_json",
 ]
 
 [[package]]
 name = "elemental-shared"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74d8f6f2cec67d5d8a1b32af2435666aae5724866171c8a06004401dfdac5290"
+version = "0.2.0"
+source = "git+https://github.com/ElectronicWave/Elemental#d500fee8a1e830356e03762a55d11e28413683c2"
 dependencies = [
  "anyhow",
  "dirs",
