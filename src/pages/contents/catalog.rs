@@ -9,9 +9,10 @@ use ratatui::{
     buffer::Buffer,
     crossterm::event::{KeyCode, KeyEvent},
     layout::{Rect, Size},
+    style::{Modifier, Style},
     widgets::{Paragraph, StatefulWidget, Widget},
 };
-use tui_scrollview::{ScrollView, ScrollViewState};
+use tui_scrollview::{ScrollView, ScrollViewState, ScrollbarVisibility};
 
 #[derive(Debug, Clone, Default)]
 pub struct CatalogContent(CatalogContentState);
@@ -53,15 +54,7 @@ impl Content for CatalogContent {
                         .centered()
                         .render(area, buf);
                 } else {
-                    let text = data
-                        .iter()
-                        .map(|v| match &v.description {
-                            Some(description) => format!("{} - {}", v.version_id, description),
-                            None => v.version_id.clone(),
-                        })
-                        .collect::<Vec<String>>()
-                        .join("\n");
-                    Paragraph::new(text).render(area, buf);
+                    VersionsScrollView(&data).render(area, buf, &mut self.0.versions);
                 }
             })
             .error(|area, buf, error, previous| {
@@ -75,14 +68,14 @@ impl Content for CatalogContent {
 
     fn on_key(&mut self, key: KeyEvent) {
         match &**self.0.future.task.snapshot.load() {
-            Snapshot::Ready(_) => {
+            Snapshot::Ready(data) => {
                 // Handle key events when the future widget is in the ready state
                 // Control version list scrolling
                 if key.is_press() {
                     if key.code == KeyCode::Down {
-                        self.0.versions.scroll.scroll_down();
+                        self.0.versions.scroll_down_with_protect(data.len());
                     } else if key.code == KeyCode::Up {
-                        self.0.versions.scroll.scroll_up();
+                        self.0.versions.scroll_up();
                     }
                 }
             }
@@ -103,17 +96,56 @@ pub struct VersionData {
     pub description: Option<String>,
 }
 
-pub struct VersionsScrollView;
+pub struct VersionsScrollView<'a>(&'a [VersionData]);
+
 #[derive(Debug, Clone, Default)]
 pub struct VersionsScrollViewState {
-    pub versions: Vec<VersionData>,
-    pub scroll: ScrollViewState,
+    scroll: ScrollViewState,
+    selected: usize,
 }
-impl StatefulWidget for VersionsScrollView {
+
+impl VersionsScrollViewState {
+    pub fn scroll_down_with_protect(&mut self, length: usize) {
+        self.scroll.scroll_down();
+        self.selected = self.selected.saturating_add(1).min(length - 1);
+    }
+    pub fn scroll_up(&mut self) {
+        self.scroll.scroll_up();
+        self.selected = self.selected.saturating_sub(1);
+    }
+}
+
+impl<'a> StatefulWidget for VersionsScrollView<'a> {
     type State = VersionsScrollViewState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let mut view = ScrollView::new(Size::new(area.width, state.versions.len() as u16));
+        let item_height = 1u16;
+        let content_height = self.0.len() as u16 * item_height;
+
+        let mut view = ScrollView::new(Size::new(area.width, content_height.max(area.height)))
+            .horizontal_scrollbar_visibility(ScrollbarVisibility::Never);
+
+        for (index, version) in self.0.iter().enumerate() {
+            let y = index as u16 * item_height;
+
+            let style = if index == state.selected {
+                Style::default().add_modifier(Modifier::REVERSED)
+            } else {
+                Style::default()
+            };
+
+            let text = match &version.description {
+                Some(description) => {
+                    format!("{} - {}", version.version_id, description)
+                }
+
+                None => version.version_id.clone(),
+            };
+
+            let paragraph = Paragraph::new(text).style(style);
+
+            view.render_widget(paragraph, Rect::new(0, y, area.width.saturating_sub(1), 1));
+        }
 
         view.render(area, buf, &mut state.scroll);
     }
