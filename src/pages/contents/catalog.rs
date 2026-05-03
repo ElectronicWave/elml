@@ -1,25 +1,26 @@
 use crate::{
     pages::content::{Content, container},
-    widgets::future::{FutureWidget, FutureWidgetState, Snapshot},
+    widgets::{
+        future::{FutureWidget, FutureWidgetState, Snapshot},
+        selected::{SelectedScrollView, SelectedScrollViewState},
+    },
 };
 use anyhow::Ok;
 use elemental::{driver::drivers::vanilla::catalog::VanillaCatalog, launcher::Launcher};
 use ratatui::{
     Frame,
-    buffer::Buffer,
     crossterm::event::{KeyCode, KeyEvent},
-    layout::{Rect, Size},
+    layout::Rect,
     style::{Modifier, Style},
     widgets::{Paragraph, StatefulWidget, Widget},
 };
-use tui_scrollview::{ScrollView, ScrollViewState, ScrollbarVisibility};
 
 #[derive(Debug, Clone, Default)]
 pub struct CatalogContent(CatalogContentState);
 
 #[derive(Debug, Clone, Default)]
 pub struct CatalogContentState {
-    pub versions: VersionsScrollViewState,
+    pub scroll: SelectedScrollViewState,
     pub future: FutureWidgetState<Vec<VersionData>, anyhow::Error>,
 }
 
@@ -54,7 +55,24 @@ impl Content for CatalogContent {
                         .centered()
                         .render(area, buf);
                 } else {
-                    VersionsScrollView(&data).render(area, buf, &mut self.0.versions);
+                    SelectedScrollView::new(&data, |_, version, is_selected, area, buf| {
+                        let style = if is_selected {
+                            Style::default().add_modifier(Modifier::REVERSED)
+                        } else {
+                            Style::default()
+                        };
+
+                        let text = match &version.description {
+                            Some(description) => {
+                                format!("{} - {}", version.version_id, description)
+                            }
+                            None => version.version_id.clone(),
+                        };
+
+                        let paragraph = Paragraph::new(text).style(style);
+                        paragraph.render(area, buf);
+                    })
+                    .render(area, buf, &mut self.0.scroll);
                 }
             })
             .error(|area, buf, error, previous| {
@@ -73,9 +91,9 @@ impl Content for CatalogContent {
                 // Control version list scrolling
                 if key.is_press() {
                     if key.code == KeyCode::Down {
-                        self.0.versions.scroll_down_with_protect(data.len());
+                        self.0.scroll.down(data.len());
                     } else if key.code == KeyCode::Up {
-                        self.0.versions.scroll_up();
+                        self.0.scroll.up();
                     }
                 }
             }
@@ -94,59 +112,4 @@ impl Content for CatalogContent {
 pub struct VersionData {
     pub version_id: String,
     pub description: Option<String>,
-}
-
-pub struct VersionsScrollView<'a>(&'a [VersionData]);
-
-#[derive(Debug, Clone, Default)]
-pub struct VersionsScrollViewState {
-    scroll: ScrollViewState,
-    selected: usize,
-}
-
-impl VersionsScrollViewState {
-    pub fn scroll_down_with_protect(&mut self, length: usize) {
-        self.scroll.scroll_down();
-        self.selected = self.selected.saturating_add(1).min(length - 1);
-    }
-    pub fn scroll_up(&mut self) {
-        self.scroll.scroll_up();
-        self.selected = self.selected.saturating_sub(1);
-    }
-}
-
-impl<'a> StatefulWidget for VersionsScrollView<'a> {
-    type State = VersionsScrollViewState;
-
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let item_height = 1u16;
-        let content_height = self.0.len() as u16 * item_height;
-
-        let mut view = ScrollView::new(Size::new(area.width, content_height.max(area.height)))
-            .horizontal_scrollbar_visibility(ScrollbarVisibility::Never);
-
-        for (index, version) in self.0.iter().enumerate() {
-            let y = index as u16 * item_height;
-
-            let style = if index == state.selected {
-                Style::default().add_modifier(Modifier::REVERSED)
-            } else {
-                Style::default()
-            };
-
-            let text = match &version.description {
-                Some(description) => {
-                    format!("{} - {}", version.version_id, description)
-                }
-
-                None => version.version_id.clone(),
-            };
-
-            let paragraph = Paragraph::new(text).style(style);
-
-            view.render_widget(paragraph, Rect::new(0, y, area.width.saturating_sub(1), 1));
-        }
-
-        view.render(area, buf, &mut state.scroll);
-    }
 }

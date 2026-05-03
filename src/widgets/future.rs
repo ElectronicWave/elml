@@ -54,11 +54,8 @@ type BoxFuture<T> = Pin<Box<dyn Future<Output = T> + Send + 'static>>;
 
 pub struct FutureWidget<'a, T, E> {
     loading: Box<dyn FnMut(Rect, &mut Buffer, Option<Arc<T>>) + 'a>,
-
     ready: Box<dyn FnMut(Rect, &mut Buffer, Arc<T>) + 'a>,
-
     error: Box<dyn FnMut(Rect, &mut Buffer, Arc<E>, Option<Arc<T>>) + 'a>,
-
     factory: Box<dyn FnMut() -> BoxFuture<Result<T, E>> + Send + Sync + 'static>,
 }
 
